@@ -158,8 +158,8 @@ This makefile solves all the above described issues of unconditional include.
 
 
 An additional bonus is that $(file) is faster than include. When the file
-exists include parses the file and evals its contents and when the file is missing include
-searches a list of directories. $(file) does none of that.
+exists, include parses the file and evals its contents, and when the file is
+missing include searches a list of directories. $(file) does none of that.
 
 
 ### Another use case for .NOTINTERMEDIATE.
@@ -169,7 +169,7 @@ gcc has option -MP to generate an explicit target for each header file.
 There are compilers which do not have such an option.
 
 ```
-.NOTINTERMEDIATE %.h
+.NOTINTERMEDIATE: %.h
 ```
 
 can be used to mark header files not intermediate with those compilers.
