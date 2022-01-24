@@ -88,6 +88,7 @@ include (or rather its substitue) being a part of the dag.
 
 
 ```
+SHELL=/bin/bash
 .SECONDEXPANSION: %.o
 
 %.o: %.c %.d $$(file <%.d)
@@ -103,9 +104,9 @@ include (or rather its substitue) being a part of the dag.
 Note, gcc option -MP is not used. The contents of dep files is of the form
 
 ```
-api.o: api.c api.h <other header files>...\
+api.o: api.c api.h stddef.h stdlib.h\
+    stdio.h...\
     <more header files>...
-
 ```
 
 2. Postprocessing.
@@ -114,14 +115,57 @@ api.o: api.c api.h <other header files>...\
 read obj src headers <$*.td; echo "$$headers" >$*.d
 ```
 
-is used to extract header files from the generated .td file and store this list of
-headers files to a .d file.
+The purpose of this shell code is to extract header files from the generated
+.td file and store this list of headers files to a .d file.
 
-The contents of the generated .d file is a space separated list of headers
-files, all on one line.
+The resultant .d file contains a space separated list of headers files, all on
+one line.
 
+E.g.
 
-3. $(file) appends the contents of %.d to the list of prerequisites.
+```
+api.h stddef.h stdlib.h stdio.h...
+```
+
+Postprocessing in this example uses bash code and handles the gcc format of dep
+files.
+
+Some other compilers (e.g. xlc, sun cc) generate dep files in
+one-prerequisite-per-rule format.
+
+E.g.
+
+```
+api.o: api.c
+api.o: api.h
+api.o: stddef.h
+api.o: stdlib.h
+api.o: stdio.h
+...
+```
+
+To postprocess dep files of this format the following code can be used.
+This example contains sun cc specific compiler options.
+
+```
+SHELL=/bin/bash
+.ONESHELL:
+%.o: %.c %.d $$(file <%.d)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -xMD -xMF $*.td -o $@ -c $<
+	{
+		while :
+		do
+		  IFS=: read obj dep
+		  status=$$?
+		  [[ $$dep =~ \.h$$ ]] && echo -n "$$dep"
+		  [[ $$status -ne 0 ]] && break
+		done
+		echo
+	} <$*.td >$*.d
+	touch -c $@
+```
+
+3. $(file) appends the contents of %.d file to the list of prerequisites.
 
 
 4. Second expansion ensures $$(file) is expanded only when this rule is used to build
@@ -193,13 +237,6 @@ the stem.
 Another advantage of .NOTINTERMEDIATE over $$* is ability to be used with
 built-in rules, if needed.
 
-
-
-### Notes.
-
-Postprocessing in this example uses bash code and handles the gcc format of dep
-files. To handle the one-rule-per-line format, that other compilers use, read
-can be run in a loop.
 
 
 ### Author.
