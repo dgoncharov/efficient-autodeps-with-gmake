@@ -1,9 +1,10 @@
 ## Efficient autodeps with gmake.
 
 
-The modern technique of tracking dependencies uses include directive.  While
-this technique is infinitely superior to the manual maintenance of deps there
-is still room for improvement.
+The modern technique of tracking dependencies relies on include directive
+[[1]](http://make.mad-scientist.net/papers/advanced-auto-dependency-generation).
+While this technique is infinitely superior to the manual maintenance of deps
+there is still room for improvement.
 
 
 ### 1. include is not a part of the dag.
@@ -238,6 +239,9 @@ Another advantage of .NOTINTERMEDIATE over $$* is ability to be used with
 built-in rules, if needed.
 
 
+### References
+
+[1] http://make.mad-scientist.net/papers/advanced-auto-dependency-generation.
 
 ### Author.
 
