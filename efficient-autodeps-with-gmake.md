@@ -28,6 +28,9 @@ $ make hello.o
 make includes all dep files in the current directory, even though only hello.d
 is needed. This is not optimal.
 
+include is not cheap. Even in a medium project, with multiple source files
+include of all dep files usually takes more than 50% of make total time (make
+itself, not its children, such as cc).
 
 
 ### 2. One makefile for multiple programs.
@@ -62,7 +65,7 @@ between multiple projects.
 
 include takes filenames as parameters. This hinders reuse of the makefile. We
 would rather not hardcode filenames of included files in a makefile, but let
-implicit rule search figure it out. 
+implicit rule search figure it out.
 
 
 
@@ -172,6 +175,36 @@ SHELL=/bin/bash
 4. Second expansion ensures $$(file) is expanded only when this rule is used to build
 the current target. This is the magic maker here.
 
+This allows make to perform expensive work only for those targets which are
+being built.
+
+
+```
+.SECONDEXPANSION:
+hello.tsk: $$(file <hello.d); $(info $@ from $^)
+bye.tsk: $$(file <bye.d); $(info $@ from $^)
+clean:; -rm -f hello.tsk bye.tsk
+```
+
+Assuming there are files hello.d and bye.d which contain the prerequisites of
+hello.tsk and bye.tsk respectively,
+```
+$ make hello.tsk
+```
+will second expand `` $$(file <hello.d) `` and will not second expand ``
+$$(file <bye.d). ``
+```
+$ make clean
+```
+will not second expand `` $$(file <hello.d) `` or `` $$(file <bye.d) ``.
+
+
+Before version 4.4 GNU Make would avoid second expansion of the prerequisites
+of unrelated targets only in the case of implicit rules.  In the case of
+explicit and static pattern rules GNU Make avoids second expansion of the
+prerequisites of unrelated targets starting with version 4.4.
+
+See https://savannah.gnu.org/bugs/?62706.
 
 
 ### .NOTINTERMEIDATE.
@@ -242,6 +275,10 @@ built-in rules, if needed.
 ### References
 
 [1] http://make.mad-scientist.net/papers/advanced-auto-dependency-generation.
+
+[2] https://savannah.gnu.org/bugs/?62706.
+
+[3] https://savannah.gnu.org/bugs/?60188.
 
 ### Author.
 
